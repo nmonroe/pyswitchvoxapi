@@ -11,28 +11,31 @@ class switchvox_api(object):
         self, server, user, password,
         verifycert=False, autoitemspp=200
     ):
+        # update self variables with input
         self.__dict__.update(locals())
-        self.server = 'https://%s/' % (server)
+        self.serverurl = 'https://%s/json' % (server)
+        # setup requests session
         self.session = requests.Session()
         self.session.auth = requests.auth.HTTPDigestAuth(user, password)
         self.session.headers.update({'content-type': 'application/json'})
-        self.dtformat = '%Y-%m-%d %H:%M:%S'
 
     def _do_request(self, req):
         data = json.dumps(req, cls=switchvox_jsonencoder)
         r = self.session.post(
-            self.server + 'json',
+            self.serverurl,
             verify=self.verifycert,
             data=data
         )
         response = r.json()
         try:
+            # see if the request errored out
             response['response']['errors']
         except KeyError:
             return response
         self._raise_exception(response)
 
     def _raise_exception(self, errors):
+        # get errors and raise RuntimeError with detailed message
         base_message = "\nSwitchvox API Error.\n  Method: %s" % \
             (errors['response']['method'])
         message = ""
